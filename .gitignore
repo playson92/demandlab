@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+data/raw/
+data/interim/
+data/processed/
+output/
+mlruns/
+*.db
+*.duckdb
+*.sqlite
+*.joblib
+.env
+.uv-cache/
