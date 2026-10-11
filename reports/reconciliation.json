@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "source_rows": 1067371,
+  "reason_precedence": [
+    "other_country",
+    "invalid_date",
+    "missing_sku",
+    "missing_invoice",
+    "cancellation",
+    "invalid_quantity",
+    "negative_quantity_return_or_adjustment",
+    "zero_quantity",
+    "invalid_price",
+    "nonpositive_price",
+    "technical_code",
+    "accepted"
+  ],
+  "disjoint_reasons": [
+    {
+      "exclusion_reason": "accepted",
+      "rows": 956077,
+      "units": 9371322.0,
+      "value_gbp": 17246734.585997105
+    },
+    {
+      "exclusion_reason": "cancellation",
+      "rows": 16650,
+      "units": -368279.0,
+      "value_gbp": -1329717.739999999
+    },
+    {
+      "exclusion_reason": "negative_quantity_return_or_adjustment",
+      "rows": 3457,
+      "units": -573085.0,
+      "value_gbp": 0.0
+    },
+    {
+      "exclusion_reason": "nonpositive_price",
+      "rows": 2722,
+      "units": 250995.0,
+      "value_gbp": -158676.14
+    },
+    {
+      "exclusion_reason": "other_country",
+      "rows": 86041,
+      "units": 1915617.0,
+      "value_gbp": 2904666.6710000155
+    },
+    {
+      "exclusion_reason": "technical_code",
+      "rows": 2424,
+      "units": 11922.0,
+      "value_gbp": 624243.1909999999
+    }
+  ],
+  "missing_by_column": {
+    "invoice": 0,
+    "sku": 0,
+    "name": 4382,
+    "quantity": 0,
+    "timestamp": 0,
+    "price": 0,
+    "customer_id": 243007,
+    "country": 0
+  },
+  "potential_duplicate_business_rows_retained": 34335,
+  "selected_same_scope": {
+    "accepted_lines": 82451,
+    "line_units": 2062484,
+    "line_value_gbp": 2159838.9000000264,
+    "daily_units": 2062484
+  },
+  "selected_daily_rows": 58532,
+  "internal_zero_sales_days": 31996,
+  "pretest_extremes": {
+    "max_positive_quantity": 74215.0,
+    "max_positive_price": 38970.0
+  },
+  "large_transactions": "retained without clipping",
+  "missing_customer_ids": "retained when the sales line is otherwise valid",
+  "duplicate_policy": "business duplicates retained; source table replaced, never appended"
+}

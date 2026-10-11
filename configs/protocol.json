@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "D": "2011-12-08",
+  "selection_cutoff": "2010-11-30",
+  "horizon": 28,
+  "last_source_day_excluded": true,
+  "windows": {
+    "validation_1": {
+      "start": "2011-05-27",
+      "end": "2011-06-23",
+      "origin": "2011-05-26"
+    },
+    "validation_2": {
+      "start": "2011-06-24",
+      "end": "2011-07-21",
+      "origin": "2011-06-23"
+    },
+    "validation_3": {
+      "start": "2011-07-22",
+      "end": "2011-08-18",
+      "origin": "2011-07-21"
+    },
+    "validation_4": {
+      "start": "2011-08-19",
+      "end": "2011-09-15",
+      "origin": "2011-08-18"
+    },
+    "calibration_1": {
+      "start": "2011-09-16",
+      "end": "2011-10-13",
+      "origin": "2011-09-15"
+    },
+    "calibration_2": {
+      "start": "2011-10-14",
+      "end": "2011-11-10",
+      "origin": "2011-10-13"
+    },
+    "final_test": {
+      "start": "2011-11-11",
+      "end": "2011-12-08",
+      "origin": "2011-11-10"
+    }
+  },
+  "target": "daily_recorded_sales_units",
+  "country": "United Kingdom"
+}

@@ -1,0 +1,14 @@
+*
+!pyproject.toml
+!uv.lock
+!src/
+!src/**
+!app/
+!app/**
+!data/
+!data/demo/
+!data/demo/**
+!.streamlit/
+!.streamlit/config.toml
+**/__pycache__
+**/*.pyc

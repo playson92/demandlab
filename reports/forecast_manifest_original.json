@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "origin": "2011-11-10 00:00:00",
+  "prediction_sha256": "ee7b92f1adaa640b9f874c2a9a89ba14b194b7be3a4cbf753fb23396c5c9bc55",
+  "freeze_sha256": "6eaca30a6a30bd93e09fa844fd42901d7fd5df1b20fd31b06ccbefd7a8977938",
+  "code": {
+    "source_sha": "d9334f527bbd7bbca1b12a39626032dd97f91253",
+    "working_tree_sha256": "2f07c9e5c56a215405c529310ab130447057b5bcc86d53ab172919e186c28b88",
+    "dirty": true
+  }
+}
