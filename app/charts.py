@@ -16,6 +16,7 @@ def style(fig, height=330):
         hovermode="x unified",
         xaxis_title="Data",
         yaxis_title="Sztuki",
+        separators=", ",
     )
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(gridcolor="#E8E8E1", rangemode="tozero")
@@ -115,8 +116,16 @@ def inventory_chart(result, dates, method):
             row=2,
             col=1,
         )
-    fig = style(fig, 360)
-    fig.update_layout(barmode="group", xaxis_title=None, xaxis2_title="Data")
+    fig = style(fig, 440)
+    # Reserve separate space below both panels for a wrapping mobile legend.
+    fig.update_layout(
+        barmode="group",
+        xaxis_title=None,
+        xaxis2_title="Data",
+        margin=dict(l=8, r=8, t=40, b=110),
+        legend=dict(orientation="h", x=0, y=-0.28, xanchor="left", yanchor="top"),
+        separators=", ",
+    )
     fig.update_xaxes(tickformat="%d.%m")
     fig.update_yaxes(title_text="Sztuki", row=2, col=1)
     return fig

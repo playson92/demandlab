@@ -103,7 +103,7 @@ Developer checks use the same lockfile:
 
 ```sh
 uv sync --frozen --extra research --extra dev --python 3.12
-uv run --no-sync python scripts/protect_study.py --manifest docs/study_integrity.json
+uv run --no-sync python scripts/protect_study.py check --manifest docs/study_integrity.json
 uv run --no-sync ruff check .
 uv run --no-sync ruff format --check .
 uv run --no-sync pytest
@@ -113,6 +113,13 @@ CI runs fixture regressions and browser startup on Windows, Linux and macOS,
 plus container browser interaction. Job artifacts record actual OS/architecture;
 only completed jobs are evidence of a tested platform. Scientific package
 versions were preserved when separating demo, research and development extras.
+
+On Windows, the public verification entry point runs integrity, Ruff and the full
+fixture suite once (also used by Windows CI):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify.ps1
+```
 AI assistance was used in implementation and review; the code and validation
 evidence are available for inspection.
 

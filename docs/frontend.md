@@ -72,3 +72,10 @@ post-test UI correction disclosure. The presentation is versioned by its current
 Git commit; changing app code does not reapprove or rerun the frozen final test.
 This implementation was developed with AI assistance, without claims of
 independent sole authorship or commercial outcomes.
+
+Inventory metrics use two explicit rows, with responsive columns. The chart
+reserves a bottom margin for its wrapping legend, separate from both subplot
+titles and the date axis. Tables retain all metrics and advertise horizontal
+scrolling. Shared presentation helpers format Polish decimals, integer stock,
+two-decimal errors/costs and percentage-point deltas; input arrays and raw exports
+retain their original precision.

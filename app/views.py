@@ -7,7 +7,14 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from charts import forecast_chart, inventory_chart, style
-from presentation import METHODS, display, method_label, method_table
+from presentation import (
+    METHODS,
+    display,
+    format_metrics,
+    measure_digits,
+    method_label,
+    method_table,
+)
 from state import (
     changed_parameters,
     example_parameters,
@@ -17,6 +24,11 @@ from state import (
 )
 
 from demandlab.inventory import InventoryParameters, simulate
+
+
+def show_table(frame, **kwargs):
+    st.caption("Więcej kolumn? Przesuń tabelę poziomo, aby odczytać wszystkie wyniki.")
+    st.dataframe(frame, width="stretch", **kwargs)
 
 
 def product_view(data, history, final, observed, origin, sku, method, methods):
@@ -80,7 +92,7 @@ def product_view(data, history, final, observed, origin, sku, method, methods):
             icon=":material/download:",
         )
     with st.expander("Zapisane wartości prognozy"):
-        st.dataframe(table, hide_index=True, alt="Prognozy i granice przedziałów")
+        show_table(table, hide_index=True, alt="Prognozy i granice przedziałów")
 
 
 def inventory_view(data, history, final, observed, origin, sku, method, methods):
@@ -189,24 +201,32 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
             return
         result = results[method]
         measures = [
-            ("service_rate", "Obsłużone sztuki [%]", "%", 100),
+            ("service_rate", "Udział obsłużonych sztuk", "%", 100),
             ("unserved_units", "Nieobsłużone sztuki", " szt.", 1),
             ("total_cost_gbp", "Koszt symulacji", " GBP", 1),
             ("ending_stock", "Zapas końcowy", " szt.", 1),
         ]
         baseline = st.session_state.get("baseline")
-        with st.container(horizontal=True):
-            for field, label, suffix, scale in measures:
+        for start in range(0, len(measures), 2):
+            columns = st.columns(2)
+            for column, (field, label, suffix, scale) in zip(
+                columns, measures[start : start + 2], strict=True
+            ):
                 value = result.summary[field]
                 delta = None
                 if baseline and value is not None and baseline["summary"][field] is not None:
                     delta = display(
                         (value - baseline["summary"][field]) * scale,
                         " pp" if field == "service_rate" else suffix,
+                        digits=measure_digits(field),
                     )
-                st.metric(
+                column.metric(
                     label,
-                    display(None if value is None else value * scale, suffix),
+                    display(
+                        None if value is None else value * scale,
+                        suffix,
+                        digits=measure_digits(field),
+                    ),
                     delta=delta,
                     delta_color="off",
                     border=True,
@@ -253,12 +273,14 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
                             if baseline["summary"][field] is not None
                             else None,
                             suffix,
+                            digits=measure_digits(field),
                         ),
                         "B": display(
                             result.summary[field] * scale
                             if result.summary[field] is not None
                             else None,
                             suffix,
+                            digits=measure_digits(field),
                         ),
                         "B − A": display(
                             (result.summary[field] - baseline["summary"][field]) * scale
@@ -266,12 +288,13 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
                             and baseline["summary"][field] is not None
                             else None,
                             " pp" if field == "service_rate" else suffix,
+                            digits=measure_digits(field),
                         ),
                     }
                     for field, label, suffix, scale in measures
                 ]
             )
-            st.dataframe(comparison, hide_index=True, alt="Wyniki A i B oraz różnice")
+            show_table(comparison, hide_index=True, alt="Wyniki A i B oraz różnice")
         else:
             st.caption(
                 "Zmiana produktu, metody, daty lub ścieżki sprzedaży usuwa punkt odniesienia A."
@@ -304,7 +327,7 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
         st.caption(
             "Wspólna ścieżka: historyczna sprzedaż albo prognoza metody domyślnej × mnożnik, floor(x+0,5). Przykładowy zapas = ceil(7 × średnia 28 dni historii). Sama zmiana dostawy nie zmienia zapasu początkowego."
         )
-        st.dataframe(
+        show_table(
             pd.DataFrame(
                 [
                     {
@@ -314,7 +337,7 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
                             if r.summary["service_rate"] is not None
                             else None
                         ),
-                        "Niedobór [szt.]": r.summary["unserved_units"],
+                        "Niedobór [szt.]": display(r.summary["unserved_units"], digits=0),
                         "Koszt [GBP]": display(r.summary["total_cost_gbp"]),
                     }
                     for m, r in results.items()
@@ -327,7 +350,12 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
             "Dostawy → przegląd i zamówienie → sprzedaż → koszty. Brak backorders i początkowego pipeline. Okno celu kończy się w dniu 28; brak wyceny odzysku zapasu. Wynik jest symulacją, nie optymalizacją rzeczywistej firmy."
         )
         st.json({"parameters": asdict(parameters), "provenance": provenance})
-        st.dataframe(result.daily, hide_index=True, alt="Pełny dzienny przebieg scenariusza B")
+        daily_table = result.daily.copy()
+        for col in daily_table.select_dtypes("number"):
+            daily_table[col] = daily_table[col].map(
+                lambda x, column=col: display(x, digits=2 if "cost" in column else 0)
+            )
+        show_table(daily_table, hide_index=True, alt="Pełny dzienny przebieg scenariusza B")
 
 
 def frozen_report(root, name):
@@ -402,13 +430,11 @@ def methods_view(data, root, sku, method, methods):
     fig.update_layout(showlegend=False, xaxis_title="WAPE [%] · niżej = lepiej", yaxis_title=None)
     st.plotly_chart(fig, width="stretch", alt="Globalny błąd WAPE trzech metod")
     columns = [c for c in ["mae", "wape", "bias"] if c in subset]
-    table = method_table(subset, columns)
+    table = method_table(subset, columns, formatted=True)
     table["Wybór"] = [
         "Wybrana na walidacji" if m == data["manifest"]["winner"] else "" for m in subset.method
     ]
-    for c in table.select_dtypes("number"):
-        table[c] = table[c].map(display)
-    st.dataframe(
+    show_table(
         table,
         hide_index=True,
         alt="Globalne MAE, WAPE i bias; wybór walidacyjny oznaczony etykietą",
@@ -423,7 +449,7 @@ def methods_view(data, root, sku, method, methods):
                 "Szerokość 95%": subset.width95.map(lambda x: display(x, " szt.")),
             }
         )
-        st.dataframe(bounds, hide_index=True, alt="Pokrycie w procentach i szerokość w sztukach")
+        show_table(bounds, hide_index=True, alt="Pokrycie w procentach i szerokość w sztukach")
     st.caption(
         "MAE: średni błąd w sztukach. WAPE: suma błędów / suma sprzedaży [%]. Bias: kierunek względnego błędu [%]. N/A: brak wyniku lub przedziałów."
     )
@@ -443,8 +469,8 @@ def methods_view(data, root, sku, method, methods):
     per_sku = frozen_report(root, "metrics_by_sku.csv")
     if not per_sku.empty:
         per_sku = per_sku[per_sku.split == "final_test"]
-        st.dataframe(
-            method_table(per_sku[per_sku.sku == sku], ["mae", "wape", "bias"]),
+        show_table(
+            method_table(per_sku[per_sku.sku == sku], ["mae", "wape", "bias"], formatted=True),
             hide_index=True,
             alt="Testowe metryki aktualnego produktu, oddzielone od globalnych",
         )
@@ -462,8 +488,8 @@ def methods_view(data, root, sku, method, methods):
                 .sort_values("mae", ascending=False)
                 .head(8)
             )
-            st.dataframe(
-                hard[["sku", "mae", "wape", "bias"]].rename(
+            show_table(
+                format_metrics(hard[["sku", "mae", "wape", "bias"]]).rename(
                     columns={
                         "sku": "SKU",
                         "mae": "MAE [szt.]",

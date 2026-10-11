@@ -16,25 +16,20 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 RUNTIME_EVIDENCE = (
-    "output/frontend/junit.xml",
-    "output/frontend/pytest-final.log",
-    "output/frontend/ui-final.log",
-    "output/frontend/pytest-console.log",
-    "output/frontend/bootstrap-zip.log",
-    "output/frontend/code_changes.diff",
-    "output/frontend/docker-build.log",
-    "output/frontend/clean-demo.json",
-    "output/frontend/protected_before.json",
-    "output/frontend/protected_after.json",
-    "output/frontend/review.md",
-    "output/frontend/browser-final/browser_checks.json",
-    "output/frontend/browser-final/inventory_visible.json",
-    "output/frontend/browser-final/inventory_visible.csv",
-    "output/frontend/docker-browser/browser_checks.json",
-    "output/frontend/zip-browser/browser_checks.json",
-    "output/frontend/clone-browser/browser_checks.json",
+    "output/final-fixes/readme-integrity.log",
+    "output/final-fixes/verify.log",
+    "output/final-fixes/junit.xml",
+    "output/final-fixes/code_changes.diff",
+    "output/final-fixes/protected-before.json",
+    "output/final-fixes/protected-after.json",
+    "output/final-fixes/review.md",
+    "output/final-fixes/zoom.json",
+    "output/final-fixes/zip-check.json",
+    "output/final-fixes/browser/browser_checks.json",
+    "output/final-fixes/browser/inventory_visible.json",
+    "output/final-fixes/browser/inventory_visible.csv",
 ) + tuple(
-    "output/frontend/browser-final/" + name
+    "output/final-fixes/browser/" + name
     for name in (
         "frontend_product_1440.png",
         "frontend_inventory_1440.png",
@@ -43,6 +38,8 @@ RUNTIME_EVIDENCE = (
         "frontend_inventory_390.png",
         "frontend_methods_390.png",
         "frontend_zoom_200.png",
+        "inventory_zoom_200.png",
+        "frontend_inventory_mobile_AB.png",
     )
 )
 EXCLUDED_DIRECTORIES = {

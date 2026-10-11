@@ -25,8 +25,22 @@ def display(value, suffix="", digits=2):
     return f"{value:,.{digits}f}".replace(",", " ").replace(".", ",") + suffix
 
 
-def method_table(frame, columns):
+def measure_digits(field):
+    return 0 if field in {"unserved_units", "ending_stock"} else 2
+
+
+def format_metrics(frame):
+    result = frame.copy()
+    for column in ("mae", "wape", "bias"):
+        if column in result:
+            result[column] = result[column].map(display)
+    return result
+
+
+def method_table(frame, columns, formatted=False):
     result = frame[["method", *columns]].copy()
+    if formatted:
+        result = format_metrics(result)
     result["method"] = result.method.map(method_label)
     return result.rename(
         columns={"method": "Metoda", "mae": "MAE [szt.]", "wape": "WAPE [%]", "bias": "Bias [%]"}

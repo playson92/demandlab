@@ -105,7 +105,7 @@ def test_three_views_and_real_widget_interactions(demo):
     app.number_input(key="lead_time").set_value(1).run()
     app.number_input(key="initial_stock").set_value(0).run()
     assert not app.exception
-    assert next(d.value for d in app.dataframe if "served" in d.value).loc[0, "served"] == 0
+    assert next(d.value for d in app.dataframe if "served" in d.value).loc[0, "served"] == "0"
     app.selectbox(key="scenario").select("reference").run()
     app.slider(key="multiplier").set_value(0.0).run()
     assert not app.exception

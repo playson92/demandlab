@@ -57,3 +57,12 @@
 - Runtime installation separates minimal demo from optional research/dev dependencies. All pre-existing locked package versions retained. Native launcher requires neither activation nor Git and does no installation at startup.
 - Original research reproduction belongs in a separate checkout at the verified MVP study version; it must not overwrite this presentation's bundled artifacts.
 - Final delivery SHA, GitHub CI, clean clone/ZIP and Docker browser outcomes are stored in output/delivery_checks.json and the review bundle after their actual verification. No merge or publication to paid hosting is performed.
+
+## Limited frontend closure
+
+- Corrected all active protect_study invocations to include `check`; the protected manifest and checker remain unchanged.
+- Windows CI now runs public verify.ps1 once instead of repeating its corresponding integrity/lint/format/full-suite steps. JUnit and browser artifacts retained.
+- Actual local README integrity command PASS; public PowerShell5.1 verify.ps1 PASS, 79 tests. Fixtures are synthetic, no historical research rerun.
+- Inventory cards use two explicit rows; Polish formatting separates integer counts from two-decimal percentages, costs and errors. Raw inputs/exports unchanged.
+- Inventory legend has reserved space below the two panels. Actual screenshots inspected at390x844,1366x768,1440x900 and native Chromium200% zoom; separate interaction checks and visual review stored in output/final-fixes.
+- Final SHA/PR/CI, ZIP startup and archive metadata are recorded after commit under output, never inferred from earlier CI.

@@ -19,9 +19,19 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen --extra research --extra dev --python 3.12
       - run: uv run --no-sync python scripts/protect_study.py check --manifest docs/study_integrity.json
+        if: runner.os != 'Windows'
       - run: uv run --no-sync ruff check .
+        if: runner.os != 'Windows'
       - run: uv run --no-sync ruff format --check .
+        if: runner.os != 'Windows'
       - run: uv run --no-sync pytest --junitxml=output/junit.xml
+        if: runner.os != 'Windows'
+        env:
+          OMP_NUM_THREADS: "2"
+      - name: Public PowerShell verification script
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\scripts\verify.ps1
         env:
           OMP_NUM_THREADS: "2"
       - run: uv run --no-sync playwright install --with-deps chromium

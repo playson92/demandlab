@@ -13,7 +13,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
 from artifacts import load_artifacts
 from charts import forecast_chart, inventory_chart
-from presentation import METHODS, display, method_label, method_table
+from presentation import (
+    METHODS,
+    display,
+    format_metrics,
+    measure_digits,
+    method_label,
+    method_table,
+)
 from state import (
     changed_parameters,
     example_parameters,
@@ -58,6 +65,20 @@ def test_null_and_zero_values_are_distinct():
     assert display(np.nan, "%") == "N/A"
     assert display(0, "%") == "0,00%"
     assert display(-8.721407, "%") == "-8,72%"
+
+
+def test_polish_presentation_preserves_raw_precision():
+    raw = pd.DataFrame(
+        {"method": ["weekday_mean_4w"], "mae": [1.23456789], "wape": [0.0], "bias": [np.nan]}
+    )
+    before = raw.copy(deep=True)
+    shown = method_table(raw, ["mae", "wape", "bias"], formatted=True)
+    assert shown.iloc[0].tolist()[1:] == ["1,23", "0,00", "N/A"]
+    assert format_metrics(raw).mae.tolist() == ["1,23"]
+    pd.testing.assert_frame_equal(raw, before)
+    assert display(1011, " szt.", digits=measure_digits("unserved_units")) == "1 011 szt."
+    assert display(1166.789, " GBP", digits=measure_digits("total_cost_gbp")) == "1 166,79 GBP"
+    assert display(-14.35, " pp", digits=measure_digits("service_rate")) == "-14,35 pp"
 
 
 @pytest.mark.parametrize("method", list(METHODS))

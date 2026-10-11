@@ -3,7 +3,7 @@
 The frontend displays an existing frozen study. Its presentation source has
 changed; its data, model calculations, SQL, configurations and published study
 artifacts are protected by [study_integrity.json](study_integrity.json). Check
-them with `python scripts/protect_study.py --manifest docs/study_integrity.json`.
+them with `python scripts/protect_study.py check --manifest docs/study_integrity.json`.
 Ordinary demo startup needs no Git, research dependencies, MLflow, raw source
 workbook or local training artifacts. See the [demo instructions](../README.md).
 
