@@ -45,3 +45,15 @@
 - Environment check corrections: local clone via filesystem required a different Git safe.directory spelling, so the clean check used a public GitHub clone instead. A first isolation assertion used the original cwd; rerun from the clean cwd passed. Neither was reported as PASS before correction.
 - All stages 00–05 complete; original final experiment and post-test UI correction transparently distinguished. No paid hosting or human review/merge performed.
 - Final delivery: documentation/evidence-only checkpoint follows the verified 12a81f3 source. Current delivery SHA/CI are checked after the final commit and stored in output/delivery_checks.json and the external review bundle to avoid commit SHA self-reference. Bundle status is READY_FOR_REVIEW only after that current CI check actually succeeds.
+
+## Frontend recruiter presentation (2026-10-11)
+
+- Separate branch `feat/demandlab-frontend-recruiter` from MVP delivery `68277b676027369b815f76baea20ff057fcfb470`; PR base is the unmerged MVP branch.
+- Three compact Polish views, centralized labels/styles, stable view/SKU/method URLs, true validation/test scope, inventory A/B and exact visible exports.
+- BEFORE/AFTER byte hashes: all 50 protected files in demo, reports, SQL, configuration and numerical source remain unchanged. `docs/study_integrity.json` provides cross-platform canonical text verification; local raw snapshots are in output/frontend.
+- PASS: full local regression, 77 tests; UI state additions independently tested. Synthetic pipeline tests use only isolated fixtures. No historical UCI training, calibration, freeze or final-test scoring was run for this presentation.
+- PASS: actual Chromium initial browser roundtrip, A/B lead-time 7 to 14 preserves stock, CSV/JSON downloads, keyboard focus, desktop 1440x900/1366x768, mobile390x844 and equivalent 200% layout. Final captures and packaging verification are recorded as post-commit evidence, not inferred here.
+- Research reporting publication now writes output/reports/study_results.md or an explicitly supplied directory; fixture verifies editorial documentation and study files remain intact.
+- Runtime installation separates minimal demo from optional research/dev dependencies. All pre-existing locked package versions retained. Native launcher requires neither activation nor Git and does no installation at startup.
+- Original research reproduction belongs in a separate checkout at the verified MVP study version; it must not overwrite this presentation's bundled artifacts.
+- Final delivery SHA, GitHub CI, clean clone/ZIP and Docker browser outcomes are stored in output/delivery_checks.json and the review bundle after their actual verification. No merge or publication to paid hosting is performed.

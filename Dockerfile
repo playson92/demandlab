@@ -7,7 +7,9 @@ COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable
 COPY app ./app
 COPY data/demo ./data/demo
+COPY reports/metrics_by_sku.csv reports/metrics_by_horizon.csv ./reports/
 COPY .streamlit ./.streamlit
+COPY scripts/run_demo.py ./scripts/run_demo.py
 EXPOSE 8501
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=6 CMD ["/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=2)"]
-CMD ["/app/.venv/bin/python", "-m", "streamlit", "run", "app/streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+CMD ["/app/.venv/bin/python", "scripts/run_demo.py", "--address", "0.0.0.0", "--port", "8501"]

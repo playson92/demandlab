@@ -2,5 +2,5 @@ services:
   demandlab:
     build: .
     ports:
-      - "127.0.0.1:8501:8501"
+      - "127.0.0.1:${DEMANDLAB_PORT:-8501}:8501"
     restart: unless-stopped

@@ -10,5 +10,10 @@
 !data/demo/**
 !.streamlit/
 !.streamlit/config.toml
+!scripts/
+!scripts/run_demo.py
+!reports/
+!reports/metrics_by_sku.csv
+!reports/metrics_by_horizon.csv
 **/__pycache__
 **/*.pyc

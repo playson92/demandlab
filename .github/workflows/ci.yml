@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 on:
   push:
   pull_request:
@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -17,34 +17,51 @@ jobs:
         with:
           version: "0.13.0"
           enable-cache: true
-      - run: uv sync --frozen --extra dev --python 3.12
-      - run: uv run --frozen ruff check .
-      - run: uv run --frozen ruff format --check .
-      - run: uv run --frozen pytest --junitxml=output/junit.xml
+      - run: uv sync --frozen --extra research --extra dev --python 3.12
+      - run: uv run --no-sync python scripts/protect_study.py check --manifest docs/study_integrity.json
+      - run: uv run --no-sync ruff check .
+      - run: uv run --no-sync ruff format --check .
+      - run: uv run --no-sync pytest --junitxml=output/junit.xml
         env:
           OMP_NUM_THREADS: "2"
+      - run: uv run --no-sync playwright install --with-deps chromium
+      - name: Start offline demo and inspect rendered interface
+        shell: bash
+        run: |
+          mkdir -p output/native-browser
+          uv run --no-sync python -c "import json,platform,sys; from pathlib import Path; Path('output/native-browser/platform.json').write_text(json.dumps({'os':platform.platform(),'architecture':platform.machine(),'python':sys.version},indent=2),encoding='utf-8')"
+          uv run --no-sync python scripts/run_demo.py --port 8501 > output/native-browser/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          uv run --no-sync python scripts/capture_evidence.py --url http://127.0.0.1:8501 --output-dir output/native-browser --ci-smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.os }}
-          path: output/junit.xml
+          name: native-${{ matrix.os }}
+          path: |
+            output/junit.xml
+            output/native-browser/
   docker:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t demandlab:ci .
-      - name: Start image and verify health
-        shell: bash
-        run: |
-          docker run --detach --name demandlab-ci --publish 127.0.0.1:8501:8501 demandlab:ci
-          for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:8501/_stcore/health; then
-              exit 0
-            fi
-            sleep 2
-          done
-          docker logs demandlab-ci
-          exit 1
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.0"
+      - run: uv sync --frozen --extra dev --python 3.12
+      - run: uv run --no-sync playwright install --with-deps chromium
+      - run: uv run --no-sync python scripts/protect_study.py check --manifest docs/study_integrity.json
+      - run: docker compose up --build --detach
+      - name: Inspect container's rendered interface and interaction
+        run: uv run --no-sync python scripts/capture_evidence.py --url http://127.0.0.1:8501 --output-dir output/docker-browser --ci-smoke
       - name: Container logs
         if: always()
-        run: docker logs demandlab-ci || true
+        run: |
+          mkdir -p output/docker-browser
+          docker compose logs > output/docker-browser/server.log
+          docker compose down
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docker-browser
+          path: output/docker-browser/

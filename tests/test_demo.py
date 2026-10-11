@@ -21,8 +21,8 @@ def test_committed_uci_demo_all_views(monkeypatch):
     app = AppTest.from_file(str(ROOT / "app/streamlit_app.py"), default_timeout=30).run()
     assert not app.exception and not app.error
     sku = manifest["examples"]["regular"]
-    app.sidebar.selectbox[0].set_value(sku).run()
-    for view in ["Prognoza produktu", "Jakość modeli", "Symulator"]:
+    app.selectbox(key="sku").set_value(sku).run()
+    for view in ["product", "methods", "inventory"]:
         app.sidebar.radio[0].set_value(view).run()
         assert not app.exception and not app.error
     app.number_input(key="lead_time").set_value(1).run()

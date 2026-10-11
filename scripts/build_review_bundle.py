@@ -16,16 +16,32 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 RUNTIME_EVIDENCE = (
-    "output/junit.xml",
-    "output/verify-pretest.log",
-    "output/verify-final.log",
-    "output/validation.log",
-    "output/calibration.log",
-    "output/pipeline-current.xml",
-    "output/pipeline-current.log",
-    "output/docker-build.log",
-    "output/reproducibility.log",
-    "output/clean-demo.log",
+    "output/frontend/junit.xml",
+    "output/frontend/pytest-final.log",
+    "output/frontend/ui-final.log",
+    "output/frontend/code_changes.diff",
+    "output/frontend/docker-build.log",
+    "output/frontend/clean-demo.json",
+    "output/frontend/protected_before.json",
+    "output/frontend/protected_after.json",
+    "output/frontend/review.md",
+    "output/frontend/browser-final/browser_checks.json",
+    "output/frontend/browser-final/inventory_visible.json",
+    "output/frontend/browser-final/inventory_visible.csv",
+    "output/frontend/docker-browser/browser_checks.json",
+    "output/frontend/zip-browser/browser_checks.json",
+    "output/frontend/clone-browser/browser_checks.json",
+) + tuple(
+    "output/frontend/browser-final/" + name
+    for name in (
+        "frontend_product_1440.png",
+        "frontend_inventory_1440.png",
+        "frontend_methods_1440.png",
+        "frontend_product_390.png",
+        "frontend_inventory_390.png",
+        "frontend_methods_390.png",
+        "frontend_zoom_200.png",
+    )
 )
 EXCLUDED_DIRECTORIES = {
     ".git",

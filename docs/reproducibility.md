@@ -1,32 +1,50 @@
-# Reproducibility
+﻿# Historical study reproduction
 
-Python 3.12, one resolver-generated cross-platform uv.lock; native PowerShell 5.1 scripts check native exit codes.
+The frontend displays an existing frozen study. Its presentation source has
+changed; its data, model calculations, SQL, configurations and published study
+artifacts are protected by [study_integrity.json](study_integrity.json). Check
+them with `python scripts/protect_study.py --manifest docs/study_integrity.json`.
+Ordinary demo startup needs no Git, research dependencies, MLflow, raw source
+workbook or local training artifacts. See the [demo instructions](../README.md).
 
-```powershell
-Set-Location C:\projekty\demandlab
-powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
-powershell -ExecutionPolicy Bypass -File scripts\verify.ps1
-powershell -ExecutionPolicy Bypass -File scripts\run_app.ps1
-# Separate process: full original-source study
-powershell -ExecutionPolicy Bypass -File scripts\reproduce.ps1
-# Or -SourceFile C:\data\online_retail_II.xlsx
+The historical study uses 80 products and the default `weekday_mean_4w`, selected
+on validation. The final issue date is 2011-11-10; the 28-day test ends 2011-12-08.
+The verified delivery source is
+`68277b676027369b815f76baea20ff057fcfb470`, which retains the reviewed study and
+its post-test presentation-correction disclosure. Original training source and
+content identities remain in the frozen manifests and execution records.
+See [the correction disclosure](post_test_correction.md); replaying already
+exposed labels is reproduction, not another independent final test.
+
+The code identity used by the study includes `app/`. Therefore **do not run
+`final_test`, `freeze`, `reproduce` or `record_ui_correction.py` on the new frontend
+checkout**. The freeze guard is deliberately preserved. Install research tools
+and replay the historical study only in a separate checkout at the verified
+source, leaving the current demo untouched.
+
+Requirements for research: Git, Python 3.12, uv, internet for the first locked
+installation and the UCI source download (or the original local source workbook).
+Choose a new empty directory for the following separate clone:
+
+```sh
+git clone https://github.com/playson92/demandlab.git demandlab-study
+cd demandlab-study
+git checkout --detach 68277b676027369b815f76baea20ff057fcfb470
+uv sync --frozen --extra dev --python 3.12
+uv run --no-sync python -m demandlab reproduce
 ```
 
-CLI: `python -m demandlab --help`; ordered stages download, prepare, validate, calibrate, freeze, test, demo, report. Existing frozen study skips validation/calibration in reproduce. To retrain from scratch use a separate checkout with the committed reviewed recipe and remove no original evidence.
+At this historical commit all scientific dependencies are still base
+dependencies; its `dev` extra matches the original checks. The new frontend
+branch's equivalent development setup uses `--extra research --extra dev`, but
+must not be used to rerun this study. To use a saved workbook in the historical
+checkout, pass `--source-file "/path/to/online_retail_II.xlsx"` to `reproduce`.
+Keep outputs, raw data, model files and MLflow databases in that separate clone.
+Do not copy regenerated outputs over this frontend's protected reports/demo.
 
-Measured forecast-stage wall time: 542.7 seconds across 29 runs (includes feature generation/model fits; excludes ingestion). Per-run wall/CPU/RSS are in reports/resources.json.
-
-Training source commit: `d9334f527bbd7bbca1b12a39626032dd97f91253`; working-tree content hash: `2f07c9e5c56a215405c529310ab130447057b5bcc86d53ab172919e186c28b88`. Delivery commit is recorded only in the external review bundle after the final commit.
-
-MLflow logs locally to output/mlflow/tracking.sqlite and output/mlflow/artifacts without an HTTP server. run_mlflow.ps1 starts a loopback-only UI on port 5000. Raw/interim/processed, models, SQLite and .venv stay outside Git. Demo needs only committed daily/forecast Parquet, product CSV and versioned manifest. No widget downloads or trains.
-
-Actual checks: reproduce.ps1 completed on the original source cache, preserving
-exact daily/selection/forecast identities and original metrics. Monetary quality
-control sums may differ by less than 1e-8 GBP due to floating summation order;
-this does not affect target units. A public GitHub clone of 12a81f3 was installed
-into a fresh .venv; its real-demo AppTest passed in 13.92s and its own server
-returned HTTP 200 with no raw/processed/MLflow present. Subsequent scoring is
-explicitly reproduction of already exposed original test labels.
-
-The original forecasting commit above remains distinct from the corrected UI
-checkout recorded in current freeze. See [post-test correction](post_test_correction.md).
+Historical CLI stages are download, prepare, validate, calibrate, freeze, test,
+demo and report. Existing frozen reproduction skips validation/calibration.
+Original test artifacts, including `*_original.*` and `test_execution.json`, are
+retained. Numerical identity and original evaluation remain reviewable even as
+the frontend evolves. Native and Docker demo checks test presentation and fixture
+regressions only; frontend CI never downloads UCI or retrains the study.
