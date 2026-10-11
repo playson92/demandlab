@@ -27,7 +27,10 @@
 - Source implementation commit: 1705d7b; provenance includes uncommitted content hash. Provenance and resume safeguards were strengthened during validation; numeric feature/model recipes stayed unchanged.
 - Engineering findings fixed before test: initial_units demo field mismatch; synthetic MLflow update experiment mismatch; interrupted-freeze resume and integrity guards; simulator hand-test expected order; nonstandard NaN in JSON export.
 - PASS: scripts/verify.ps1: Ruff check/format; 34 integrated tests including full isolated synthetic pipeline + exact replay + MLflow + AppTest, 144.72s. output/verify-pretest.log and output/junit.xml. Warnings: upstream SQLAlchemy deprecation and sandbox cache ownership; cache disabled for later script runs.
-- IN_PROGRESS 03: real two-origin calibration now follows integrated verification.
+- PASS 03: four validation origins complete; recipe winner weekday_mean_4w / tree B. Both calibration origins complete for three methods; 1,120 residuals per method/horizon bucket; linear empirical quantiles; no test labels used.
+- PASS: targeted current pipeline/replay test after detailed-report integration: 1 passed, 127.81s, output/pipeline-current.log/.xml. Upstream SQLAlchemy deprecation warning only.
+- PASS: local MLflow HTTP 200 on 127.0.0.1 using same SQLite store; own processes stopped. UI helper reduced to one worker for laptop use.
 - IN_PROGRESS 04: UI/simulator/scripts/Docker/CI implemented; actual browser and image verification pending real demo.
-- NOT_RUN 05: final test has not been exposed; screenshots, clean demo checkout, Docker build, PR/CI and delivery bundle pending.
-- Next: integrated tests, calibrate, commit reviewed source, freeze/test, real demo and all delivery checks.
+- IN_PROGRESS 05: final test not yet exposed at this checkpoint. Next command freezes exact feature schema/grid, saves all final forecasts without labels, then scores original final test. No winner/feature/hyperparameter changes will follow its result.
+- NOT_RUN: screenshots, clean demo checkout, Docker build, PR/CI and delivery bundle.
+- Next: original final test, reports/real demo and all delivery checks.

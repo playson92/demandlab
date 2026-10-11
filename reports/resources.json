@@ -98,5 +98,35 @@
     "elapsed_seconds": 34.6877150000073,
     "cpu_seconds": 37.890625,
     "rss_mb": 322.765625
+  },
+  "calibration_1_seasonal_naive_7": {
+    "elapsed_seconds": 0.6451243000046816,
+    "cpu_seconds": 0.609375,
+    "rss_mb": 224.33203125
+  },
+  "calibration_1_weekday_mean_4w": {
+    "elapsed_seconds": 0.6398100999940652,
+    "cpu_seconds": 1.03125,
+    "rss_mb": 279.5234375
+  },
+  "calibration_1_hist_gradient_boosting": {
+    "elapsed_seconds": 38.79534659997444,
+    "cpu_seconds": 44.3125,
+    "rss_mb": 288.55859375
+  },
+  "calibration_2_seasonal_naive_7": {
+    "elapsed_seconds": 0.4635296000051312,
+    "cpu_seconds": 0.46875,
+    "rss_mb": 292.203125
+  },
+  "calibration_2_weekday_mean_4w": {
+    "elapsed_seconds": 0.43470979999983683,
+    "cpu_seconds": 0.421875,
+    "rss_mb": 293.26953125
+  },
+  "calibration_2_hist_gradient_boosting": {
+    "elapsed_seconds": 46.09957640001085,
+    "cpu_seconds": 52.375,
+    "rss_mb": 294.0859375
   }
 }

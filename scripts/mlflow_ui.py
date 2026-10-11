@@ -22,6 +22,8 @@ raise SystemExit(
             "127.0.0.1",
             "--port",
             str(args.port),
+            "--workers",
+            "1",
             "--backend-store-uri",
             "sqlite:///" + (store / "tracking.sqlite").as_posix(),
             "--default-artifact-root",

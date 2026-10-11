@@ -11,6 +11,7 @@ import pandas as pd
 import psutil
 
 from demandlab.evaluation import apply_intervals, calibrate, make_windows, metrics, select_winner
+from demandlab.features import FEATURE_COLUMNS
 from demandlab.forecasting import CONFIGS, forecast
 from demandlab.tracking import code_identity, record_run, update_run, versions
 
@@ -251,6 +252,9 @@ def freeze(root: Path):
         "versions": versions(),
         "code": code_identity(root),
         "features": "Origin anchored lags, 7/28/56 statistics, weekday history, SKU, horizon, known calendar",
+        "feature_schema": ["sku", *FEATURE_COLUMNS],
+        "hyperparameter_grid": CONFIGS,
+        "category_treatment": "SKU mapping fitted on admissible training only; explicit categorical mask",
         "training_rule": "weekly origins aligned to evaluation origin; origin+28<=cutoff",
         "review_sha256": hashlib.sha256(review.read_bytes()).hexdigest(),
         "daily_sha256": hashlib.sha256(
