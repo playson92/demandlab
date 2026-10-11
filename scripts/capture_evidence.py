@@ -79,7 +79,7 @@ def capture(url, destination, smoke=False):
             page.get_by_role("spinbutton", name="Zapas początkowy [szt.]", exact=True).input_value()
             == initial
         )
-        assert "Czas dostawy: 7 → 14" in page.content()
+        page.get_by_text("Czas dostawy: 7 → 14", exact=True).wait_for()
         with page.expect_download() as download:
             page.get_by_role("button", name="Scenariusz B · JSON").click()
         export = destination / "inventory_visible.json"

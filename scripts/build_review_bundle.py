@@ -19,6 +19,8 @@ RUNTIME_EVIDENCE = (
     "output/frontend/junit.xml",
     "output/frontend/pytest-final.log",
     "output/frontend/ui-final.log",
+    "output/frontend/pytest-console.log",
+    "output/frontend/bootstrap-zip.log",
     "output/frontend/code_changes.diff",
     "output/frontend/docker-build.log",
     "output/frontend/clean-demo.json",

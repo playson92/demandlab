@@ -18,6 +18,9 @@ try {
             & $launcher.Source -3.12 -m venv (Join-Path $projectRoot '.venv')
             if ($LASTEXITCODE -ne 0) { throw 'Creating Python 3.12 environment failed.' }
         }
+        # uv-created environments may deliberately omit pip.
+        & $pythonExe -m ensurepip --upgrade
+        if ($LASTEXITCODE -ne 0) { throw 'Preparing the local package installer failed.' }
         & $pythonExe -m pip install 'uv==0.13.0'
         if ($LASTEXITCODE -ne 0) { throw 'Installing uv failed.' }
         & $pythonExe -m uv @syncArguments
