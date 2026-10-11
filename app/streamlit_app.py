@@ -261,7 +261,7 @@ elif view == "Jakość modeli":
                 "width80": "Szerokość 80% [szt.]",
                 "coverage95": st.column_config.NumberColumn("Pokrycie 95%", format="%.3f"),
                 "width95": "Szerokość 95% [szt.]",
-                "bias": "Bias · prognoza−sprzedaż [szt.]",
+                "bias": "Bias · prognoza−sprzedaż [%]",
             },
         )
     st.caption(

@@ -1,5 +1,6 @@
 """Capture real browser screenshots and exercise downloads from the running app."""
 
+import argparse
 import json
 from pathlib import Path
 
@@ -8,7 +9,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def capture():
+def capture(url: str):
     screenshots = ROOT / "docs/screenshots"
     screenshots.mkdir(parents=True, exist_ok=True)
     exports = ROOT / "reports/exports"
@@ -18,20 +19,21 @@ def capture():
         page = browser.new_page(viewport={"width": 1440, "height": 1150}, device_scale_factor=1)
         errors = []
         page.on("pageerror", lambda exc: errors.append(str(exc)))
-        page.goto("http://127.0.0.1:8501", wait_until="networkidle")
-        page.get_by_text("Przegląd", exact=True).wait_for()
+        page.goto(url, wait_until="networkidle")
+        page.get_by_test_id("stRadioGroup").get_by_text("Przegląd", exact=True).wait_for()
         page.get_by_test_id("stMetric").first.wait_for()
         manifest = json.loads((ROOT / "data/demo/manifest.json").read_text(encoding="utf-8"))
         if "regular" in manifest.get("examples", {}):
             code = manifest["examples"]["regular"]
             page.get_by_role("combobox").first.click()
+            page.get_by_role("combobox").first.fill(code)
             page.get_by_role("option").filter(has_text=code).first.click()
         for view, name in [
             ("Prognoza produktu", "forecast"),
             ("Jakość modeli", "quality"),
             ("Symulator", "simulator"),
         ]:
-            page.get_by_text(view, exact=True).first.click()
+            page.get_by_test_id("stRadioGroup").get_by_text(view, exact=True).click()
             page.get_by_role("heading", name=view, exact=True).wait_for()
             page.locator(".js-plotly-plot").first.wait_for()
             if name == "quality":
@@ -64,6 +66,7 @@ def capture():
                     "desktop_viewport": [1440, 1150],
                     "small_viewport": [768, 1024],
                     "javascript_errors": errors,
+                    "url": url,
                 },
                 indent=2,
             ),
@@ -73,4 +76,6 @@ def capture():
 
 
 if __name__ == "__main__":
-    capture()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--url", default="http://127.0.0.1:8501")
+    capture(parser.parse_args().url)
