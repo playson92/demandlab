@@ -1,0 +1,50 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.0"
+          enable-cache: true
+      - run: uv sync --frozen --extra dev --python 3.12
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen ruff format --check .
+      - run: uv run --frozen pytest --junitxml=output/junit.xml
+        env:
+          OMP_NUM_THREADS: "2"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: output/junit.xml
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t demandlab:ci .
+      - name: Start image and verify health
+        shell: bash
+        run: |
+          docker run --detach --name demandlab-ci --publish 127.0.0.1:8501:8501 demandlab:ci
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8501/_stcore/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs demandlab-ci
+          exit 1
+      - name: Container logs
+        if: always()
+        run: docker logs demandlab-ci || true

@@ -28,7 +28,7 @@ def code_identity(root: Path) -> dict:
             or name in {"pyproject.toml", "uv.lock"}
         ):
             digest.update(name.encode())
-            digest.update(path.read_bytes())
+            digest.update(path.read_bytes().replace(b"\r\n", b"\n"))
     return {
         "source_sha": git("rev-parse", "HEAD"),
         "working_tree_sha256": digest.hexdigest(),
@@ -74,8 +74,8 @@ def record_run(root: Path, name: str, params: dict, scores: dict, files: list[Pa
         return run.info.run_id
 
 
-def update_run(root: Path, run_id: str, scores: dict, files: list[Path]):
-    configure_tracking(root)
+def update_run(root: Path, run_id: str, scores: dict, files: list[Path], synthetic: bool = False):
+    configure_tracking(root, synthetic)
     with mlflow.start_run(run_id=run_id):
         mlflow.log_metrics({k: float(v) for k, v in scores.items() if v is not None})
         for path in files:

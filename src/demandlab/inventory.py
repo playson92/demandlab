@@ -9,6 +9,19 @@ import numpy as np
 import pandas as pd
 
 
+def _json_values(value: Any) -> Any:
+    """Normalize pandas missing values and NumPy scalars to standard JSON values."""
+    if isinstance(value, dict):
+        return {key: _json_values(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_values(item) for item in value]
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 @dataclass(frozen=True)
 class InventoryParameters:
     initial_stock: int = 0
@@ -60,18 +73,21 @@ class SimulationResult:
 
     def export_json(self, provenance: dict[str, Any]) -> str:
         return json.dumps(
-            {
-                "schema_version": 1,
-                "provenance": provenance,
-                "parameters": asdict(self.parameters),
-                "summary": self.summary,
-                "forecast": self.forecast,
-                "scenario_sales": self.sales,
-                "assumptions": ASSUMPTIONS,
-                "daily": self.daily.to_dict(orient="records"),
-            },
+            _json_values(
+                {
+                    "schema_version": 1,
+                    "provenance": provenance,
+                    "parameters": asdict(self.parameters),
+                    "summary": self.summary,
+                    "forecast": self.forecast,
+                    "scenario_sales": self.sales,
+                    "assumptions": ASSUMPTIONS,
+                    "daily": self.daily.to_dict(orient="records"),
+                }
+            ),
             ensure_ascii=False,
             indent=2,
+            allow_nan=False,
         )
 
     def export_csv(self, provenance: dict[str, Any]) -> str:

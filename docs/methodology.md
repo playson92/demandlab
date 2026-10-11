@@ -22,6 +22,20 @@ D-167..D-140, D-139..D-112 and D-111..D-84. Calibration uses D-83..D-56 and
 D-55..D-28. The final test is D-27..D. Dates are inclusive and each origin is the
 end of the preceding day. Generated manifests record the concrete dates.
 
+The downloaded workbook contains 1,067,371 rows across `Year 2009-2010` and
+`Year 2010-2011`, with local dates 2009-12-01 through 2011-12-09. Therefore
+D is 2011-12-08 and initial selection ends 2010-11-30. The actual frozen dates are:
+
+| Split | Origin | Inclusive evaluation dates |
+|---|---|---|
+| validation_1 | 2011-05-26 | 2011-05-27 through 2011-06-23 |
+| validation_2 | 2011-06-23 | 2011-06-24 through 2011-07-21 |
+| validation_3 | 2011-07-21 | 2011-07-22 through 2011-08-18 |
+| validation_4 | 2011-08-18 | 2011-08-19 through 2011-09-15 |
+| calibration_1 | 2011-09-15 | 2011-09-16 through 2011-10-13 |
+| calibration_2 | 2011-10-13 | 2011-10-14 through 2011-11-10 |
+| final_test | 2011-11-10 | 2011-11-11 through 2011-12-08 |
+
 Each origin issues all 28 horizons together. Training expands through the origin.
 Training examples use weekly origins on a grid aligned to the evaluated origin,
 and **training origin + 28 <= current cutoff**. Thus all labels of every training

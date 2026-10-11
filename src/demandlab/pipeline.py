@@ -102,7 +102,7 @@ def issue(
     run_id = record_run(root, path.stem, params_log, {**scores, **timing}, [path])
     frame["run_id"] = run_id
     frame.to_parquet(path, index=False)
-    update_run(root, run_id, {}, [path])
+    update_run(root, run_id, {}, [path], synthetic=params_log["synthetic"])
     resource_path = root / "reports/resources.json"
     resources = load(resource_path) if resource_path.exists() else {}
     resources[path.stem] = timing
@@ -111,8 +111,8 @@ def issue(
     return frame
 
 
-def validate(root: Path):
-    if (root / "reports/freeze_manifest.json").exists():
+def validate(root: Path, replay: bool = False):
+    if (root / "reports/freeze_manifest.json").exists() and not replay:
         raise ValueError("Experiment already frozen; use a new output root for a new study")
     daily, manifest, windows = context(root)
     candidates = [(m, m, None) for m in METHODS[:2]] + [
@@ -151,7 +151,22 @@ def validate(root: Path):
         "code": code_identity(root),
         "frozen_at": datetime.now(UTC).isoformat(),
     }
-    dump(root / "reports/model_selection.json", recipe)
+    if replay:
+        original = load(root / "reports/model_selection.json")
+        if (
+            original["winner"] != winner
+            or original["tree_params"] != recipe["tree_params"]
+            or not all(
+                np.isclose(original["candidate_wape"][key], value, rtol=1e-8, atol=1e-8)
+                for key, value in scores.items()
+            )
+        ):
+            raise ValueError(
+                "Replay differs from frozen validation; preserve evidence and investigate"
+            )
+        recipe = original
+    else:
+        dump(root / "reports/model_selection.json", recipe)
     pd.DataFrame(rows).to_csv(root / "reports/validation_candidates.csv", index=False)
     selected = evaluated[
         (evaluated.candidate.isin(METHODS[:2])) | (evaluated.candidate == best_tree)
@@ -161,8 +176,8 @@ def validate(root: Path):
     return recipe
 
 
-def calibration(root: Path):
-    if (root / "reports/freeze_manifest.json").exists():
+def calibration(root: Path, replay: bool = False):
+    if (root / "reports/freeze_manifest.json").exists() and not replay:
         raise ValueError("Cannot change calibration after freeze")
     daily, _, windows = context(root)
     recipe = load(root / "reports/model_selection.json")
@@ -175,8 +190,26 @@ def calibration(root: Path):
             frames.append(join_labels(predictions, daily))
     evaluated = pd.concat(frames, ignore_index=True)
     parameters = calibrate(evaluated)
-    dump(root / "reports/calibration.json", parameters)
+    if replay:
+        original = load(root / "reports/calibration.json")
+        for method, buckets in parameters["methods"].items():
+            for bucket, values in buckets.items():
+                if not all(
+                    np.isclose(
+                        values[q], original["methods"][method][bucket][q], rtol=1e-8, atol=1e-8
+                    )
+                    for q in QUANTILES
+                ):
+                    raise ValueError("Replay calibration differs from frozen parameters")
+        parameters = original
+    else:
+        dump(root / "reports/calibration.json", parameters)
     evaluated.to_parquet(root / "output/calibration_evaluated.parquet", index=False)
+    rows = [
+        {"split": key[0], "method": key[1], **metrics(part)}
+        for key, part in evaluated.groupby(["split", "method"])
+    ]
+    pd.DataFrame(rows).to_csv(root / "reports/calibration_metrics.csv", index=False)
     return parameters
 
 
@@ -186,10 +219,21 @@ def freeze(root: Path):
     if not review.exists() or "APPROVED_FOR_FINAL_TEST" not in review.read_text(encoding="utf-8"):
         raise ValueError("Independent methodology review must approve before final test")
     manifest_path = root / "reports/freeze_manifest.json"
-    if manifest_path.exists() and (root / "reports/forecast_manifest.json").exists():
+    if (
+        manifest_path.exists()
+        and (root / "reports/forecast_manifest.json").exists()
+        and (root / "output/final_test_predictions.parquet").exists()
+    ):
         saved = load(root / "reports/forecast_manifest.json")
         if hashlib.sha256(manifest_path.read_bytes()).hexdigest() != saved["freeze_sha256"]:
             raise ValueError("Existing freeze changed")
+        if (
+            hashlib.sha256(
+                (root / "output/final_test_predictions.parquet").read_bytes()
+            ).hexdigest()
+            != saved["prediction_sha256"]
+        ):
+            raise ValueError("Existing frozen predictions changed")
         return load(manifest_path)
     recipe = load(root / "reports/model_selection.json")
     parameters = load(root / "reports/calibration.json")
@@ -213,7 +257,7 @@ def freeze(root: Path):
             (root / "data/processed/daily.parquet").read_bytes()
         ).hexdigest(),
         "selection_sha256": hashlib.sha256(
-            (root / "reports/product_selection.csv").read_bytes()
+            (root / "reports/product_selection.csv").read_bytes().replace(b"\r\n", b"\n")
         ).hexdigest(),
         "final_test_exposed": False,
     }
@@ -230,17 +274,17 @@ def freeze(root: Path):
     predictions = []
     for method in METHODS:
         saved_path = root / "output/forecasts" / f"final_test_{method}.parquet"
-        frame = (
-            pd.read_parquet(saved_path)
-            if saved_path.exists()
-            else issue(
+        saved_frame = pd.read_parquet(saved_path) if saved_path.exists() else None
+        if saved_frame is not None and "pending" not in saved_frame.run_id.values:
+            frame = saved_frame
+        else:
+            frame = issue(
                 root,
                 daily,
                 windows[-1],
                 method,
                 recipe["tree_params"] if method == METHODS[2] else None,
             )
-        )
         predictions.append(apply_intervals(frame, parameters))
     frozen = pd.concat(predictions, ignore_index=True)
     frozen.to_parquet(root / "output/final_test_predictions.parquet", index=False)
@@ -279,7 +323,10 @@ def final_test(root: Path):
         ("data/processed/daily.parquet", "daily_sha256"),
         ("reports/product_selection.csv", "selection_sha256"),
     ]:
-        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != frozen[key]:
+        content = (root / relative).read_bytes()
+        if relative.endswith(".csv"):
+            content = content.replace(b"\r\n", b"\n")
+        if hashlib.sha256(content).hexdigest() != frozen[key]:
             raise ValueError("Frozen data or product selection has changed")
     if code_identity(root)["working_tree_sha256"] != frozen["code"]["working_tree_sha256"]:
         raise ValueError(
@@ -297,15 +344,26 @@ def final_test(root: Path):
         {"split": "final_test", "method": method, **metrics(part)}
         for method, part in evaluated.groupby("method")
     ]
-    for method, part in evaluated.groupby("method"):
-        update_run(root, part.run_id.iloc[0], metrics(part), [predictions_path, freeze_path])
+    for _method, part in evaluated.groupby("method"):
+        update_run(
+            root,
+            part.run_id.iloc[0],
+            metrics(part),
+            [predictions_path, freeze_path],
+            synthetic=frozen["source"].get("synthetic", False),
+        )
     pd.DataFrame(rows).to_csv(root / "reports/final_test_metrics.csv", index=False)
+    original_execution = (root / "reports/test_execution.json").exists()
     dump(
-        root / "reports/test_execution.json",
+        root
+        / ("output/replay_execution.json" if original_execution else "reports/test_execution.json"),
         {
             "executed_utc": datetime.now(UTC).isoformat(),
             "forecast_manifest": forecast_manifest,
-            "evaluation_kind": "frozen independent final test; recipe unchanged",
+            "evaluation_kind": "reproduction of original frozen test; already exposed"
+            if original_execution
+            else "original frozen final test; recipe unchanged",
+            "final_test_exposed": True,
         },
     )
     print(pd.DataFrame(rows).to_string(index=False), flush=True)
@@ -363,3 +421,15 @@ def build_demo(root: Path):
     ]
     pd.DataFrame(rows).to_csv(root / "reports/metrics_by_regularity.csv", index=False)
     pd.DataFrame(combined).to_csv(root / "reports/metrics.csv", index=False)
+    calibration_rows = pd.read_parquet(root / "output/calibration_evaluated.parquet")
+    study = pd.concat([validation, calibration_rows, test], ignore_index=True)
+    study = study.merge(selection[["sku", "group"]], on="sku", validate="many_to_one")
+    study["horizon_group"] = study.horizon.map(
+        lambda h: f"{7 * ((h - 1) // 7) + 1}-{7 * ((h - 1) // 7) + 7}"
+    )
+    for dimension in ["sku", "group", "horizon", "horizon_group"]:
+        rows = [
+            {"split": key[0], "method": key[1], dimension: key[2], **metrics(part)}
+            for key, part in study.groupby(["split", "method", dimension])
+        ]
+        pd.DataFrame(rows).to_csv(root / "reports" / f"metrics_by_{dimension}.csv", index=False)

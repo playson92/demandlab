@@ -17,5 +17,17 @@
 - PASS: bootstrap commit on main 9a16b22.
 - Initial sandbox GitHub/Python/Docker failures were access restrictions; elevated checks succeeded.
 - GitHub creation first attempt failed because elevated execution did not preserve cwd; retried with explicit Set-Location.
-- NOT_RUN: full pipeline, model evaluation, UI, tests, screenshots and Docker build.
-- Next: install resolved dependencies and implement owned modules in parallel.
+- PASS 00: public repository https://github.com/playson92/demandlab; main bootstrap; implementation on feat/demandlab-mvp; resolver-generated uv.lock and .venv; real official source downloaded.
+- PASS 01: both sheets 1,067,371 source rows; source 2009-12-01..2011-12-09; D=2011-12-08. Selection 2010-11-30 uses initial history only: 40 intermittent + 40 regular.
+- PASS: selected same-scope SQL line_units=daily_units=2,062,484, 82,451 accepted lines. reports/reconciliation.json and source manifest hold evidence.
+- PASS 02: seven concrete nonoverlapping 28-day windows, direct origin-only features, baselines, manual metrics and leakage tests implemented. Model/evaluation/inventory review: reports/methodology_review.md.
+- PASS: six ingestion tests, twelve model/evaluation tests, fifteen inventory/AppTest tests (separate module runs; integrated verification pending).
+- PASS: native scripts/bootstrap.ps1 installed/checks locked dependencies locally; no global Python/Git configuration changed.
+- PASS validation: four origins, three prespecified tree recipes and two baselines trained on actual UCI. Pooled WAPE: seasonal naive 138.1802%, weekday mean 122.7310%, best tree B 123.3650%. Default weekday_mean_4w chosen before calibration/test.
+- Source implementation commit: 1705d7b; provenance includes uncommitted content hash. Provenance and resume safeguards were strengthened during validation; numeric feature/model recipes stayed unchanged.
+- Engineering findings fixed before test: initial_units demo field mismatch; synthetic MLflow update experiment mismatch; interrupted-freeze resume and integrity guards; simulator hand-test expected order; nonstandard NaN in JSON export.
+- PASS: scripts/verify.ps1: Ruff check/format; 34 integrated tests including full isolated synthetic pipeline + exact replay + MLflow + AppTest, 144.72s. output/verify-pretest.log and output/junit.xml. Warnings: upstream SQLAlchemy deprecation and sandbox cache ownership; cache disabled for later script runs.
+- IN_PROGRESS 03: real two-origin calibration now follows integrated verification.
+- IN_PROGRESS 04: UI/simulator/scripts/Docker/CI implemented; actual browser and image verification pending real demo.
+- NOT_RUN 05: final test has not been exposed; screenshots, clean demo checkout, Docker build, PR/CI and delivery bundle pending.
+- Next: integrated tests, calibrate, commit reviewed source, freeze/test, real demo and all delivery checks.

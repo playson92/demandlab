@@ -48,10 +48,11 @@ def main(argv=None):
             from demandlab.reporting import generate_report
 
             prepare_data(root, args.source_file)
-            if not (root / "reports/model_selection.json").exists():
-                pipeline.validate(root)
-            if not (root / "reports/calibration.json").exists():
-                pipeline.calibration(root)
+            replay = (root / "reports/freeze_manifest.json").exists()
+            if not (root / "output/validation_evaluated.parquet").exists():
+                pipeline.validate(root, replay=replay)
+            if not (root / "output/calibration_evaluated.parquet").exists():
+                pipeline.calibration(root, replay=replay)
             pipeline.freeze(root)
             pipeline.final_test(root)
             pipeline.build_demo(root)

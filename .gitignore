@@ -14,3 +14,7 @@ mlruns/
 *.joblib
 .env
 .uv-cache/
+*.egg-info/
+*.log
+build/
+dist/
