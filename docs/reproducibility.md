@@ -19,3 +19,14 @@ Measured forecast-stage wall time: 542.7 seconds across 29 runs (includes featur
 Training source commit: `d9334f527bbd7bbca1b12a39626032dd97f91253`; working-tree content hash: `2f07c9e5c56a215405c529310ab130447057b5bcc86d53ab172919e186c28b88`. Delivery commit is recorded only in the external review bundle after the final commit.
 
 MLflow logs locally to output/mlflow/tracking.sqlite and output/mlflow/artifacts without an HTTP server. run_mlflow.ps1 starts a loopback-only UI on port 5000. Raw/interim/processed, models, SQLite and .venv stay outside Git. Demo needs only committed daily/forecast Parquet, product CSV and versioned manifest. No widget downloads or trains.
+
+Actual checks: reproduce.ps1 completed on the original source cache, preserving
+exact daily/selection/forecast identities and original metrics. Monetary quality
+control sums may differ by less than 1e-8 GBP due to floating summation order;
+this does not affect target units. A public GitHub clone of 12a81f3 was installed
+into a fresh .venv; its real-demo AppTest passed in 13.92s and its own server
+returned HTTP 200 with no raw/processed/MLflow present. Subsequent scoring is
+explicitly reproduction of already exposed original test labels.
+
+The original forecasting commit above remains distinct from the corrected UI
+checkout recorded in current freeze. See [post-test correction](post_test_correction.md).

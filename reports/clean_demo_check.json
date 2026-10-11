@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "source": "public GitHub clone feat/demandlab-mvp at 12a81f3cb5db3ca87902f6cec0a30fdd927a353e",
+  "isolated_environment": "output/clean-checkout-remote/.venv",
+  "bootstrap_script": "PASS",
+  "real_demo_all_views_apptest": "PASS: 1 test, 13.92 seconds",
+  "raw_processed_mlflow_absent": "PASS",
+  "own_server_url": "http://127.0.0.1:8518",
+  "health": "HTTP 200 ok",
+  "reproduction": "reproduce.ps1 exit 0 on original UCI cache, exact frozen target/prediction identities and identical metrics; exposed-test replay"
+}
