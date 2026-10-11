@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "screenshots": [
+    "forecast.png",
+    "quality.png",
+    "simulator.png"
+  ],
+  "downloaded": [
+    "inventory_sample.csv",
+    "inventory_sample.json"
+  ],
+  "desktop_viewport": [
+    1440,
+    1150
+  ],
+  "small_viewport": [
+    768,
+    1024
+  ],
+  "javascript_errors": [],
+  "url": "http://127.0.0.1:8517"
+}

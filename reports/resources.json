@@ -128,5 +128,20 @@
     "elapsed_seconds": 46.09957640001085,
     "cpu_seconds": 52.375,
     "rss_mb": 294.0859375
+  },
+  "final_test_seasonal_naive_7": {
+    "elapsed_seconds": 0.6670922999910545,
+    "cpu_seconds": 0.640625,
+    "rss_mb": 225.3984375
+  },
+  "final_test_weekday_mean_4w": {
+    "elapsed_seconds": 0.6775809999962803,
+    "cpu_seconds": 0.96875,
+    "rss_mb": 278.9296875
+  },
+  "final_test_hist_gradient_boosting": {
+    "elapsed_seconds": 42.236422799993306,
+    "cpu_seconds": 47.96875,
+    "rss_mb": 291.94921875
   }
 }

@@ -31,6 +31,12 @@
 - PASS: targeted current pipeline/replay test after detailed-report integration: 1 passed, 127.81s, output/pipeline-current.log/.xml. Upstream SQLAlchemy deprecation warning only.
 - PASS: local MLflow HTTP 200 on 127.0.0.1 using same SQLite store; own processes stopped. UI helper reduced to one worker for laptop use.
 - IN_PROGRESS 04: UI/simulator/scripts/Docker/CI implemented; actual browser and image verification pending real demo.
-- IN_PROGRESS 05: final test not yet exposed at this checkpoint. Next command freezes exact feature schema/grid, saves all final forecasts without labels, then scores original final test. No winner/feature/hyperparameter changes will follow its result.
-- NOT_RUN: screenshots, clean demo checkout, Docker build, PR/CI and delivery bundle.
-- Next: original final test, reports/real demo and all delivery checks.
+- PASS 05 original study: source commit d9334f5, clean code, original freeze then saved final forecasts then test labels. Original final WAPE: tree 93.6596%, seasonal naive 111.4303%, weekday mean 99.8456%; default remains validation winner weekday_mean_4w.
+- PASS: real aggregates/forecasts packaged in data/demo, no raw data/model/MLflow needed; practical docs, detailed fold/SKU/regularity/horizon reports generated.
+- PASS: 35 final integrated tests, 158.29s, output/verify-final.log + JUnit; includes real UCI demo AppTest four views. Upstream SQLAlchemy deprecation warning only.
+- PASS: actual Docker build, start and HTTP 200 'ok' on 8519; container healthy, image sha256:727639bcca6cead502662545443750b88f446c9fb70703c1ae0dd06343259318. Logs output/docker-build.log. Build's Git metadata access warning does not affect image; version is separately recorded.
+- PASS: native app through run_app.ps1 on 8517. Existing ports 8501/8502 were occupied and not terminated. Browser screenshots forecast/quality/simulator and actual CSV/JSON downloads; inspected desktop 1440x1150 and smaller 768x1024; no JavaScript errors. reports/browser_check.json.
+- Post-test presentation finding: quality table incorrectly labeled percentage bias as units. Only label changed. docs/post_test_correction.md and scripts/record_ui_correction.py verify numerical code unchanged, retain *_original manifests/metrics and original execution evidence, explicitly mark later scoring as replay with exposed labels. No numerical recipe/outcome changes.
+- Browser automation initially failed on port conflict, a virtualized SKU menu, strict duplicate text and an interrupted disabled widget. Selector/port fixes resolved these; actual screenshots were captured after successful checks.
+- IN_PROGRESS: clean checkout startup, reproduce.ps1 actual source replay, full branch push/PR/current CI and review bundle.
+- Next: complete delivery verification, preserve exact delivery SHA outside tracked files.

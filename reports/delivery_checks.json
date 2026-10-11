@@ -1,0 +1,17 @@
+{
+  "repo_url": "https://github.com/playson92/demandlab",
+  "branch": "feat/demandlab-mvp",
+  "status": "IN_PROGRESS_DELIVERY",
+  "statuses": {
+    "uci_full_pipeline": "PASS",
+    "source_reconciliation": "PASS",
+    "leakage_inventory_review": "PASS",
+    "local_tests_35": "PASS",
+    "actual_browser_screenshots_exports": "PASS",
+    "docker_build_start_health": "PASS",
+    "clean_checkout_demo": "NOT_RUN",
+    "native_reproduce_script_replay": "NOT_RUN",
+    "current_delivery_ci": "NOT_RUN"
+  },
+  "post_test_correction": "UI bias unit only; original forecasts/numeric code/results preserved; repeat evaluation is exposed-test replay"
+}

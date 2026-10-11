@@ -254,9 +254,13 @@ def build_bundle(root: Path) -> tuple[Path, float]:
         "repository_url": repo_url,
         "branch_url": f"{repo_url}/tree/{branch}" if repo_url and branch else None,
         "commit_url": f"{repo_url}/commit/{delivery_sha}" if repo_url else None,
-        "source_sha": frozen.get("code", {}).get("source_sha"),
+        "source_sha": frozen.get("original_forecasting_code", frozen.get("code", {})).get(
+            "source_sha"
+        ),
         "validation_source_sha": selection.get("code", {}).get("source_sha"),
-        "training_working_tree_sha256": frozen.get("code", {}).get("working_tree_sha256"),
+        "training_working_tree_sha256": frozen.get(
+            "original_forecasting_code", frozen.get("code", {})
+        ).get("working_tree_sha256"),
         "validation_working_tree_sha256": selection.get("code", {}).get("working_tree_sha256"),
         "source_sha256": source.get("source_sha256"),
         "freeze_manifest_sha256": hashlib.sha256(
