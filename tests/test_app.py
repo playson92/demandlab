@@ -15,7 +15,7 @@ def demo(tmp_path, monkeypatch):
     origin = pd.Timestamp("2011-11-10")
     rows = []
     for sku in ["A", "B"]:
-        for method in ["seasonal_naive_7", "weekday_mean_4w", "global_tree"]:
+        for method in ["seasonal_naive_7", "weekday_mean_4w", "hist_gradient_boosting"]:
             for h in range(1, 29):
                 rows.append(
                     {
@@ -74,7 +74,7 @@ def demo(tmp_path, monkeypatch):
                 "validation_4",
                 "final_test",
             ]
-            for method in ["seasonal_naive_7", "weekday_mean_4w", "global_tree"]
+            for method in ["seasonal_naive_7", "weekday_mean_4w", "hist_gradient_boosting"]
         ]
     ).to_csv(tmp_path / "metrics.csv", index=False)
     (tmp_path / "manifest.json").write_text(
@@ -92,30 +92,30 @@ def demo(tmp_path, monkeypatch):
     return tmp_path
 
 
-def test_four_views_and_real_widget_interactions(demo):
+def test_three_views_and_real_widget_interactions(demo):
     app = AppTest.from_file(str(APP), default_timeout=20).run()
     assert not app.exception
     app.selectbox(key="sku").select("B").run()
-    assert not app.exception
-    app.radio(key="view").set_value("Prognoza produktu").run()
-    app.multiselect(key="forecast_methods").set_value(["weekday_mean_4w"]).run()
+    app.selectbox(key="method").select("weekday_mean_4w").run()
     app.selectbox(key="interval").select("95%").run()
-    assert not app.exception
     assert set(app.dataframe[0].value.method) == {"weekday_mean_4w"}
-    app.radio(key="view").set_value("Jakość modeli").run()
-    app.selectbox(key="evaluation_stage").select("Test końcowy · zamrożony").run()
-    assert not app.exception
-    assert set(app.dataframe[0].value.split) == {"final_test"}
-    app.radio(key="view").set_value("Symulator").run()
+    app.button(key="goto_inventory").click().run()
+    assert app.session_state["sku"] == "B"
+    assert app.session_state["method"] == "weekday_mean_4w"
     app.number_input(key="lead_time").set_value(1).run()
     app.number_input(key="initial_stock").set_value(0).run()
-    app.selectbox(key="simulation_method").select("global_tree").run()
     assert not app.exception
-    assert app.dataframe[-1].value.loc[0, "served"] == 0
-    app.selectbox(key="scenario").select("Hipotetyczny · wspólna referencja").run()
+    assert next(d.value for d in app.dataframe if "served" in d.value).loc[0, "served"] == "0"
+    app.selectbox(key="scenario").select("reference").run()
     app.slider(key="multiplier").set_value(0.0).run()
     assert not app.exception
     assert app.metric[0].value == "N/A"
+    app.radio(key="view").set_value("methods").run()
+    assert not app.exception
+    assert not any(e.label.startswith("Test ") for e in app.expander)
+    app.selectbox(key="evaluation_stage").select("final_test").run()
+    assert not app.exception
+    assert any(e.label.startswith("Test ") for e in app.expander)
 
 
 def test_invalid_artifact_version_is_friendly(demo):
@@ -129,7 +129,7 @@ def test_missing_demo_is_friendly(tmp_path, monkeypatch):
     monkeypatch.setenv("DEMANDLAB_DEMO_DIR", str(tmp_path))
     app = AppTest.from_file(str(APP), default_timeout=20).run()
     assert not app.exception
-    assert "Brakuje plików" in app.error[0].value
+    assert "Brakuje" in app.error[0].value
 
 
 def test_corrupted_forecast_is_friendly(demo):
