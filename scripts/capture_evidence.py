@@ -1,7 +1,9 @@
 """Inspect a real rendered demo; keep trial artifacts exclusively under output."""
 
 import argparse
+import base64
 import json
+import re
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -11,6 +13,133 @@ from urllib.request import urlopen
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def inventory_layout(page):
+    """Measure rendered SVG text separately from interactions and visual review."""
+    chart = page.get_by_test_id("stPlotlyChart").first
+    chart.scroll_into_view_if_needed()
+    page.wait_for_timeout(300)
+    boxes = chart.evaluate(
+        """el => {
+            const svg = el.querySelector('.main-svg').getBoundingClientRect();
+            const box = node => {
+                const r = node.getBoundingClientRect();
+                return {text: node.textContent, left: r.left - svg.left,
+                    top: r.top - svg.top, right: r.right - svg.left,
+                    bottom: r.bottom - svg.top};
+            };
+            return {width: svg.width, height: svg.height,
+                legend: box(el.querySelector('.legend')),
+                entries: [...el.querySelectorAll('.legendtext')].map(box),
+                titles: [...el.querySelectorAll(
+                    '.annotation-text, .xtitle, .x2title, .ytitle, .y2title'
+                )].map(box)};
+        }"""
+    )
+    legend = boxes["legend"]
+    assert len(boxes["entries"]) == 4, boxes
+    for rect in [legend, *boxes["titles"]]:
+        assert rect["left"] >= -1 and rect["right"] <= boxes["width"] + 1, boxes
+        assert rect["top"] >= -1 and rect["bottom"] <= boxes["height"] + 1, boxes
+    for title in boxes["titles"]:
+        overlap = min(title["right"], legend["right"]) > max(title["left"], legend["left"]) and min(
+            title["bottom"], legend["bottom"]
+        ) > max(title["top"], legend["top"])
+        assert not overlap, boxes
+    return boxes
+
+
+def native_zoom(url, destination):
+    """Use Chromium's tab zoom, recording the actual dimensions and scale."""
+    extension = destination / "zoom-tools" / "extension"
+    extension.mkdir(parents=True, exist_ok=True)
+    (extension / "manifest.json").write_text(
+        json.dumps(
+            {
+                "manifest_version": 3,
+                "name": "Local browser zoom verification",
+                "version": "1.0",
+                "permissions": ["tabs"],
+                "background": {"service_worker": "background.js"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (extension / "background.js").write_text(
+        "chrome.runtime.onInstalled.addListener(() => {});", encoding="utf-8"
+    )
+    checks, screenshots, errors = [], [], []
+    with sync_playwright() as p:
+        browser = p.chromium.launch_persistent_context(
+            str(destination / "zoom-tools" / "profile"),
+            channel="chromium",
+            headless=True,
+            no_viewport=True,
+            args=[
+                "--window-size=1366,855",
+                f"--disable-extensions-except={extension.resolve()}",
+                f"--load-extension={extension.resolve()}",
+            ],
+        )
+        worker = (
+            browser.service_workers[0]
+            if browser.service_workers
+            else browser.wait_for_event("serviceworker")
+        )
+        page = browser.pages[0]
+        session = browser.new_cdp_session(page)
+        page.on("pageerror", lambda exc: errors.append(str(exc)))
+
+        def screenshot(name):
+            # Playwright's CSS-sized clip can crop a natively zoomed window.
+            # CDP captures the complete physical viewport at the actual zoom.
+            png = session.send(
+                "Page.captureScreenshot",
+                {"format": "png", "fromSurface": True, "captureBeyondViewport": False},
+            )
+            (destination / name).write_bytes(base64.b64decode(png["data"]))
+            screenshots.append(name)
+
+        for view in ["product", "inventory", "methods"]:
+            page.goto(url + "?" + urlencode({"view": view, "sku": "85123A"}))
+            page.get_by_test_id("stPlotlyChart").first.wait_for(timeout=60000)
+            worker.evaluate(
+                """async prefix => {
+                    const tabs = await chrome.tabs.query({});
+                    const tab = tabs.find(t => t.url?.startsWith(prefix));
+                    await chrome.tabs.setZoom(tab.id, 2);
+                }""",
+                url,
+            )
+            page.wait_for_timeout(600)
+            metrics = page.evaluate(
+                """({width: innerWidth, height: innerHeight, dpr: devicePixelRatio,
+                    outerWidth, outerHeight, scroll: document.documentElement.scrollWidth})"""
+            )
+            assert abs(metrics["dpr"] - 2) < 0.01, metrics
+            assert metrics["scroll"] <= metrics["width"] + 2, metrics
+            assert page.get_by_test_id("stException").count() == 0
+            record = {"view": view, **metrics}
+            if view == "inventory":
+                record["inventory_svg"] = inventory_layout(page)
+                # The 440px chart exceeds a 200% viewport: capture both ends
+                # without increasing the browser window or reducing the zoom.
+                chart = page.get_by_test_id("stPlotlyChart").first
+                for end in ["start", "end"]:
+                    chart.evaluate("(el, end) => el.scrollIntoView({block: end})", end)
+                    if end == "start":
+                        page.get_by_test_id("stMain").evaluate("el => el.scrollTop -= 72")
+                    page.wait_for_timeout(300)
+                    name = f"inventory_zoom_200_{end}.png"
+                    screenshot(name)
+            else:
+                name = f"{view}_zoom_200.png"
+                screenshot(name)
+            checks.append(record)
+        browser.close()
+    assert not errors, errors
+    return {"status": "PASS", "zoom_percent": 200, "checks": checks, "screenshots": screenshots}
 
 
 def capture(url, destination, smoke=False):
@@ -24,7 +153,19 @@ def capture(url, destination, smoke=False):
             time.sleep(1)
     else:
         raise RuntimeError("Demo did not start within 90 seconds")
-    errors, evidence = [], {"url": url, "screenshots": [], "checks": []}
+    errors, evidence = (
+        [],
+        {
+            "url": url,
+            "screenshots": [],
+            "checks": [],
+            "rendered_layout_checks": [],
+            "visual_review": {
+                "status": "NOT_RUN",
+                "reason": "Requires inspecting saved screenshots",
+            },
+        },
+    )
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1366, "height": 768}, device_scale_factor=1)
@@ -38,6 +179,22 @@ def capture(url, destination, smoke=False):
 
         def shot(name):
             viewport = page.viewport_size
+            page.get_by_test_id("stMain").evaluate("el => el.scrollTo(0, 0)")
+            page.wait_for_timeout(300)
+            viewport_name = name.replace(".png", "_viewport.png")
+            page.screenshot(path=str(destination / viewport_name))
+            evidence["screenshots"].append(viewport_name)
+            if parse_qs(urlparse(page.url).query).get("view") == ["inventory"]:
+                evidence["rendered_layout_checks"].append(
+                    {"viewport": viewport, "inventory_svg": inventory_layout(page)}
+                )
+                chart_name = name.replace(".png", "_chart.png")
+                page.get_by_test_id("stPlotlyChart").first.screenshot(
+                    path=str(destination / chart_name)
+                )
+                evidence["screenshots"].append(chart_name)
+            # A separate full-content image is convenient for reviewing all
+            # controls. It is not evidence of the original viewport height.
             content_height = page.get_by_test_id("stMain").evaluate("el => el.scrollHeight")
             page.set_viewport_size(
                 {
@@ -53,6 +210,18 @@ def capture(url, destination, smoke=False):
             evidence["screenshots"].append(name)
 
         visit("product")
+        product = page.get_by_role(
+            "combobox", name="Wyszukaj produkt po nazwie lub SKU", exact=True
+        )
+        for sku in ["17003", "85123A"]:
+            product.fill(sku)
+            page.get_by_role("option", name=re.compile(rf"^{sku} · ")).click()
+            page.wait_for_function(
+                "sku => new URL(location.href).searchParams.get('sku') === sku", arg=sku
+            )
+            page.get_by_test_id("stPlotlyChart").first.wait_for(timeout=60000)
+            page.wait_for_timeout(600)
+        evidence["checks"].append("product-selection-widget")
         assert page.get_by_test_id("stPlotlyChart").first.bounding_box()["y"] < 768
         page.get_by_role("combobox", name="Przedział nominalny", exact=True).click()
         page.get_by_role("option", name="95%", exact=True).click()
@@ -142,9 +311,6 @@ def capture(url, destination, smoke=False):
                     assert page.evaluate(
                         "document.documentElement.scrollWidth <= window.innerWidth + 2"
                     )
-            page.set_viewport_size({"width": 683, "height": 384})
-            visit("product")
-            shot("frontend_zoom_200.png")
             page.goto(url + "?view=bad&sku=bad&method=bad")
             page.get_by_text(
                 "Nieznany parametr adresu został pominięty. Wybrano dostępne ustawienia demo.",
@@ -155,11 +321,13 @@ def capture(url, destination, smoke=False):
                     "1440x900",
                     "1366x768",
                     "390x844-no-horizontal-overflow",
-                    "200-percent-equivalent-layout",
+                    "native-browser-200-percent-zoom",
                     "invalid-URL-friendly-fallback",
                 ]
             )
         browser.close()
+    if not smoke:
+        evidence["native_zoom"] = native_zoom(url, destination)
     assert not errors, errors
     evidence.update(status="PASS", browser_errors=errors)
     (destination / "browser_checks.json").write_text(

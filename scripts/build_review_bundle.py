@@ -192,8 +192,14 @@ def metric_table(files: dict[str, bytes]) -> str:
     return "\n".join(table)
 
 
-def build_bundle(root: Path) -> tuple[Path, float]:
+def build_bundle(
+    root: Path, evidence_dir: Path | None = None, destination: Path | None = None
+) -> tuple[Path, float]:
     root = root.resolve()
+    output = (root / "output").resolve()
+    for directory in (evidence_dir, destination):
+        if directory is not None and not directory.resolve().is_relative_to(output):
+            raise ValueError("Evidence and bundle destinations must stay inside output/")
     require_clean(root)
     delivery_sha = git(root, "rev-parse", "HEAD").decode().strip()
     branch = git(root, "branch", "--show-current").decode().strip()
@@ -212,7 +218,21 @@ def build_bundle(root: Path) -> tuple[Path, float]:
         files[archive_path] = git(root, "show", f"{delivery_sha}:{relative}")
         provenance[archive_path] = "exact_committed_bytes"
     runtime_records = []
-    for relative in RUNTIME_EVIDENCE:
+    runtime_paths = RUNTIME_EVIDENCE
+    if evidence_dir is not None:
+        # Explicit current-run evidence avoids silently packaging older trials.
+        evidence_dir = evidence_dir.resolve()
+        runtime_paths = tuple(
+            path.relative_to(root).as_posix()
+            for path in sorted(evidence_dir.rglob("*"))
+            if path.is_file()
+            and path.suffix.lower() in {".json", ".csv", ".png", ".log", ".xml", ".md", ".diff"}
+            and not any(
+                part in {"zoom-tools", "clean-zip", "uv-cache", "pytest", "__pycache__"}
+                for part in path.relative_to(evidence_dir).parts
+            )
+        )
+    for relative in runtime_paths:
         local = root / relative
         if local.is_file():
             resolved = local.resolve()
@@ -231,7 +251,7 @@ def build_bundle(root: Path) -> tuple[Path, float]:
             )
     committed_checks = read_json(files, "reports/delivery_checks.json")
     runtime_checks = {}
-    runtime_checks_path = root / "output" / "delivery_checks.json"
+    runtime_checks_path = (evidence_dir or output) / "delivery_checks.json"
     if runtime_checks_path.is_file():
         if not runtime_checks_path.resolve().is_relative_to(root):
             raise RuntimeError("Runtime delivery checks escape the project directory")
@@ -384,9 +404,15 @@ is CC BY 4.0 with attribution in [DATA_LICENSE](project/DATA_LICENSE.md).
         ],
     }
     files["inventory.json"] = json_bytes(inventory)
-    destination = root / "output" / "codex_runs" / timestamp
-    destination.mkdir(parents=True, exist_ok=False)
+    if destination is None:
+        destination = output / "codex_runs" / timestamp
+        destination.mkdir(parents=True, exist_ok=False)
+    else:
+        destination = destination.resolve()
+        destination.mkdir(parents=True, exist_ok=True)
     bundle = destination / "REVIEW_BUNDLE.zip"
+    if bundle.exists():
+        raise ValueError(f"Review bundle already exists: {bundle}")
     temporary = destination / "REVIEW_BUNDLE.zip.part"
     try:
         with zipfile.ZipFile(
@@ -414,9 +440,15 @@ is CC BY 4.0 with attribution in [DATA_LICENSE](project/DATA_LICENSE.md).
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--evidence-dir", type=Path, help="Use evidence only from this output/ run")
+    parser.add_argument(
+        "--destination", type=Path, help="Write REVIEW_BUNDLE.zip in this output/ run"
+    )
     arguments = parser.parse_args()
     try:
-        bundle, size_mb = build_bundle(arguments.root)
+        bundle, size_mb = build_bundle(
+            arguments.root, arguments.evidence_dir, arguments.destination
+        )
     except (OSError, RuntimeError, ValueError) as error:
         print(f"Bundle generation failed: {error}", file=sys.stderr)
         return 1

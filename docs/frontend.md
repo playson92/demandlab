@@ -79,3 +79,20 @@ titles and the date axis. Tables retain all metrics and advertise horizontal
 scrolling. Shared presentation helpers format Polish decimals, integer stock,
 two-decimal errors/costs and percentage-point deltas; input arrays and raw exports
 retain their original precision.
+
+Browser evidence distinguishes interactions, rendered SVG measurements and a
+human review of screenshots. `scripts/capture_evidence.py` saves the requested
+viewport before taking a separate full-content image; the latter increases
+height and is not evidence of the original viewport. Inventory checks compare
+the actual legend/title rectangles and SVG boundaries, including in CI smoke
+runs. A full local run also uses Chromium's native 200% tab zoom and records the
+actual viewport and pixel ratio, with separate captures of both ends of the
+inventory chart. Automated results leave visual review as `NOT_RUN` until the
+saved images have been inspected.
+
+For a final committed delivery, keep current local evidence in one directory
+under `output/codex_runs/`, including `delivery_checks.json` with the final SHA.
+Pass the selected evidence directory as `--evidence-dir` and the current run
+directory as `--destination` to `scripts/build_review_bundle.py`. This includes only explicitly selected current
+evidence, exact committed source and a SHA-256 inventory, without older trial
+logs, browser profiles or extracted demo environments.

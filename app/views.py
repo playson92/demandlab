@@ -261,7 +261,11 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
                 "shortage_penalty": "Koszt niedoboru",
             }
             st.caption(
-                "; ".join(f"{names[k]}: {a} → {b}" for k, (a, b) in changes.items())
+                "; ".join(
+                    f"{names[k]}: {display(a, digits=2 if 'cost' in k or k == 'shortage_penalty' else 0)} → "
+                    f"{display(b, digits=2 if 'cost' in k or k == 'shortage_penalty' else 0)}"
+                    for k, (a, b) in changes.items()
+                )
                 or "Parametry A i B są identyczne."
             )
             comparison = pd.DataFrame(
@@ -332,7 +336,7 @@ def inventory_view(data, history, final, observed, origin, sku, method, methods)
                 [
                     {
                         "Metoda": method_label(m),
-                        "Obsługa [%]": display(
+                        "Udział obsłużonych sztuk [%]": display(
                             r.summary["service_rate"] * 100
                             if r.summary["service_rate"] is not None
                             else None
