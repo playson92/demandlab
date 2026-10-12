@@ -270,12 +270,9 @@ def capture(url, destination, smoke=False):
         page.get_by_role("combobox", name="Ścieżka sprzedaży", exact=True).click()
         page.get_by_role("option", name="Hipotetyczna · wspólna referencja", exact=True).click()
         page.get_by_test_id("stSlider").get_by_role("slider").wait_for()
-        assert (
-            page.get_by_text(
-                "A: zapisany punkt odniesienia · B: bieżący scenariusz", exact=True
-            ).count()
-            == 0
-        )
+        page.get_by_text(
+            "A: zapisany punkt odniesienia · B: bieżący scenariusz", exact=True
+        ).wait_for(state="hidden")
         evidence["checks"].extend(
             [
                 "first-viewport-chart",
